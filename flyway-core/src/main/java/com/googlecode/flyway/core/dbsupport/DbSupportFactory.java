@@ -19,6 +19,7 @@ import com.googlecode.flyway.core.api.FlywayException;
 import com.googlecode.flyway.core.dbsupport.db2.DB2DbSupport;
 import com.googlecode.flyway.core.dbsupport.derby.DerbyDbSupport;
 import com.googlecode.flyway.core.dbsupport.h2.H2DbSupport;
+import com.googlecode.flyway.core.dbsupport.hana.HanaDbSupport;
 import com.googlecode.flyway.core.dbsupport.hsql.HsqlDbSupport;
 import com.googlecode.flyway.core.dbsupport.mysql.MySQLDbSupport;
 import com.googlecode.flyway.core.dbsupport.oracle.OracleDbSupport;
@@ -89,6 +90,10 @@ public class DbSupportFactory {
             // DB2 also returns the OS it's running on.
             //   ex.: DB2/NT
             return new DB2DbSupport(connection);
+        }
+        if (databaseProductName.startsWith("HDB")) {
+            // SAP HANA
+            return new HanaDbSupport(connection);
         }
 
         throw new FlywayException("Unsupported Database: " + databaseProductName);
