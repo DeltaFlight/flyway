@@ -3,6 +3,8 @@ flyway [![Build Status](https://travis-ci.org/flyway/flyway.png)](https://travis
 
 Flyway - The Agile Database Migration Framework for Java
 
+Adding sap hana support
+
 Documentation
 =============
 http://flywaydb.org
