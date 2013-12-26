@@ -23,7 +23,6 @@ import com.googlecode.flyway.core.dbsupport.Table;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Hana implementation of Schema.
@@ -48,13 +47,12 @@ public class HanaSchema extends Schema {
     @Override
     protected boolean doEmpty() throws SQLException {
         int objectCount = jdbcTemplate.queryForInt("Select "
-                + "(select count(*) from VIEWS where schema_name=?) + "
-                + "(select count(*) from VIEWS where schema_name=?) "
-//                + "(Select count(*) from sys.TABLE_CONSTRAINTS Where TABLE_SCHEMA=?) + "
-//                + "(Select count(*) from sys.P_PROCEDURES_ Where SCHEMA=?)",
+                + "(select count(*) from SYS.VIEWS where schema_name=?) + "
+                + "(select count(*) from SYS.M_RS_TABLES where schema_name=?) + "
+                + "(select count(*) from SYS.PROCEDURES where schema_name=?) + "
+                + "(select count(*) from SYS.FUNCTIONS where schema_name=?) + "
                 + " FROM dummy",
-//                name, name,
-                name, name);
+                name, name, name, name);
         return objectCount == 0;
     }
 
@@ -70,7 +68,11 @@ public class HanaSchema extends Schema {
 
     @Override
     protected void doClean() throws SQLException {
-        for (String statement : cleanRoutines()) {
+        for (String statement : cleanProcedures()) {
+            jdbcTemplate.execute(statement);
+        }
+
+        for (String statement : cleanFunctions()) {
             jdbcTemplate.execute(statement);
         }
 
@@ -86,22 +88,39 @@ public class HanaSchema extends Schema {
     }
 
     /**
-     * Generate the statements to clean the routines in this schema.
+     * Generate the statements to clean the procedures in this schema.
      *
      * @return The list of statements.
      * @throws java.sql.SQLException when the clean statements could not be generated.
      */
-    private List<String> cleanRoutines() throws SQLException {
-        List<Map<String, String>> routineNames =
-                jdbcTemplate.queryForList(
-                        "SELECT routine_name, routine_type FROM information_schema.routines WHERE routine_schema=?",
+    private List<String> cleanProcedures() throws SQLException {
+        List<String> names =
+                jdbcTemplate.queryForStringList(
+                        "SELECT procedure_name FROM SYS.PROCEDURES WHERE schema_name=?",
                         name);
 
         List<String> statements = new ArrayList<String>();
-        for (Map<String, String> row : routineNames) {
-            String routineName = row.get("routine_name");
-            String routineType = row.get("routine_type");
-            statements.add("DROP " + routineType + " " + dbSupport.quote(name, routineName));
+        for (String name : names) {
+            statements.add("DROP PROCEDURE " + dbSupport.quote(name, name));
+        }
+        return statements;
+    }
+
+    /**
+     * Generate the statements to clean the functions in this schema.
+     *
+     * @return The list of statements.
+     * @throws java.sql.SQLException when the clean statements could not be generated.
+     */
+    private List<String> cleanFunctions() throws SQLException {
+        List<String> names =
+                jdbcTemplate.queryForStringList(
+                        "SELECT function_name FROM SYS.FUNCTIONS WHERE schema_name=?",
+                        name);
+
+        List<String> statements = new ArrayList<String>();
+        for (String name : names) {
+            statements.add("DROP FUNCTION " + dbSupport.quote(name, name));
         }
         return statements;
     }
