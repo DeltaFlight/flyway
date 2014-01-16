@@ -25,10 +25,6 @@ import java.util.regex.Pattern;
  * SqlStatementBuilder supporting Hana-specific delimiter changes.
  */
 public class HanaSqlStatementBuilder extends SqlStatementBuilder {
-    /**
-     * The keyword that indicates a change in delimiter.
-     */
-    private static final String DELIMITER_KEYWORD = "DELIMITER";
     private final String[] charSets = {
             "ARMSCII8","ASCII","BIG5","BINARY","CP1250","CP1251","CP1256","CP1257","CP850","CP852","CP866","CP932",
             "DEC8","EUCJPMS","EUCKR","GB2312","GBK","GEOSTD8","GREEK","HEBREW","HP8","KEYBCS2","KOI8R","KOI8U","LATIN1",
@@ -36,38 +32,41 @@ public class HanaSqlStatementBuilder extends SqlStatementBuilder {
     };
 
     private boolean isInMultiLineCommentDirective=false;
-
-    @Override
-    public Delimiter extractNewDelimiterFromLine(String line) {
-        if (line.toUpperCase().startsWith(DELIMITER_KEYWORD)) {
-            return new Delimiter(line.substring(DELIMITER_KEYWORD.length()).trim(), false);
-        }
-
-        return null;
-    }
+    /**
+     * Are we inside a CREATE statement.
+     */
+    private boolean insideCreate;
 
     @Override
     protected Delimiter changeDelimiterIfNecessary(String line, Delimiter delimiter) {
-        if (line.toUpperCase().startsWith(DELIMITER_KEYWORD)) {
-            return new Delimiter(line.substring(DELIMITER_KEYWORD.length()).trim(), false);
+        if (line.contains("CREATE PROCEDURE") || line.contains("CREATE FUNCTION")) {
+            insideCreate = true;
         }
 
-        return delimiter;
+        if (line.endsWith("END;")) {
+            insideCreate = false;
+        }
+
+        if (insideCreate) {
+            return null;
+        }
+        return getDefaultDelimiter();
     }
 
-    @Override
+
+        @Override
     public boolean isCommentDirective(String line) {
         // single-line comment directive
-        if (line.matches("^" + Pattern.quote("/*!") + "\\d{5} .*" + Pattern.quote("*/") + ";?")) {
+        if (line.matches("^" + Pattern.quote("/*") + ".*" + Pattern.quote("*/"))) {
             return true;
         }
         // last line of multi-line comment directive
-        if (isInMultiLineCommentDirective && line.matches(".*" + Pattern.quote("*/") + ";?")) {
+        if (isInMultiLineCommentDirective && line.matches(".*" + Pattern.quote("*/"))) {
             isInMultiLineCommentDirective = false;
             return true;
         }
         // start of multi-line comment directive
-        if (line.matches("^" + Pattern.quote("/*!") + "\\d{5} .*")) {
+        if (line.matches("^" + Pattern.quote("/*") + ".*")) {
             isInMultiLineCommentDirective = true;
             return true;
         }
@@ -76,7 +75,7 @@ public class HanaSqlStatementBuilder extends SqlStatementBuilder {
 
     @Override
     public boolean isSingleLineComment(String line) {
-        return line.startsWith("--") || line.startsWith("#");
+        return line.startsWith("--");
     }
 
     @Override

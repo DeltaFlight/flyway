@@ -50,7 +50,7 @@ public class HanaSchema extends Schema {
                 + "(select count(*) from SYS.VIEWS where schema_name=?) + "
                 + "(select count(*) from SYS.M_RS_TABLES where schema_name=?) + "
                 + "(select count(*) from SYS.PROCEDURES where schema_name=?) + "
-                + "(select count(*) from SYS.FUNCTIONS where schema_name=?) + "
+                + "(select count(*) from SYS.FUNCTIONS where schema_name=?) "
                 + " FROM dummy",
                 name, name, name, name);
         return objectCount == 0;
@@ -146,7 +146,7 @@ public class HanaSchema extends Schema {
     @Override
     protected Table[] doAllTables() throws SQLException {
         List<String> tableNames = jdbcTemplate.queryForStringList(
-                "select table_name from M_RS_TABLES where schema_name=?'", name);
+                "select table_name from M_RS_TABLES where schema_name=?", name);
 
         Table[] tables = new Table[tableNames.size()];
         for (int i = 0; i < tableNames.size(); i++) {
