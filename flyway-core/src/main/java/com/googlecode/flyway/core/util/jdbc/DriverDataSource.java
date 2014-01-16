@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2013 Axel Fontaine and the many contributors.
+ * Copyright 2010-2014 Axel Fontaine and the many contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -194,7 +194,13 @@ public class DriverDataSource implements DataSource {
         if (password != null) {
             props.setProperty("password", password);
         }
-        Connection connection = driver.connect(url, props);
+        Connection connection;
+        try {
+            connection = driver.connect(url, props);
+        } catch (SQLException e) {
+            throw new FlywayException(
+                    "Unable to obtain Jdbc connection from DataSource (" + url + ") for user '" + user + "'", e);
+        }
 
         for (String initSql : initSqls) {
             Statement statement = null;
