@@ -1,5 +1,5 @@
 /**
- * Copyright 2010-2013 Axel Fontaine and the many contributors.
+ * Copyright 2010-2014 Axel Fontaine and the many contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,5 +101,19 @@ public class SqlStatementBuilderSmallTest {
     public void stripDelimiter() {
         assertEquals("SELECT * FROM t WHERE a = 'Straßenpaß'",
                 SqlStatementBuilder.stripDelimiter("SELECT * FROM t WHERE a = 'Straßenpaß';", new Delimiter(";", false)));
+    }
+
+    @Test
+    public void stripDelimiterGo() {
+        assertEquals("SELECT * FROM t WHERE a = 'Straßenpaß'\n",
+                SqlStatementBuilder.stripDelimiter("SELECT * FROM t WHERE a = 'Straßenpaß'\nGO", new Delimiter("GO", true)));
+        assertEquals("SELECT * FROM t WHERE a = 'Straßenpaß'\n",
+                SqlStatementBuilder.stripDelimiter("SELECT * FROM t WHERE a = 'Straßenpaß'\ngo", new Delimiter("GO", true)));
+    }
+
+    @Test
+    public void stripDelimiterCustom() {
+        assertEquals("SELECT * FROM t WHERE a = 'Straßenpaß'",
+                SqlStatementBuilder.stripDelimiter("SELECT * FROM t WHERE a = 'Straßenpaß'$ßß$", new Delimiter("$ßß$", false)));
     }
 }
